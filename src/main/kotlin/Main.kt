@@ -10,7 +10,6 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 
 fun main() {
-    println("test1")
     // deklaracja miast - tu random
 
     val cities = List(20) { City(Random.nextDouble(0.0, 100.0).toRoundedBigDecimal(3), Random.nextDouble(0.0, 100.0).toRoundedBigDecimal(3)) }
@@ -47,7 +46,7 @@ fun main() {
 data class City(val x: Double, val y: Double) {
     // dystans do innego miasta
     fun distanceTo(other: City): Double {
-        return sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y)).toRoundedBigDecimal(3)
+        return sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y))
     }
 }
 
@@ -63,6 +62,6 @@ fun totalDistance(cities: List<City>): Double {
     }
     // Powrót do miasta początkowego
     distance += cities.last().distanceTo(cities.first())
-    return distance
+    return distance.toRoundedBigDecimal(3)
 }
 //
