@@ -22,47 +22,60 @@ fun main() {
         City(4.058, 2.696), City(97.129, 83.323), City(98.254, 16.345)
     )
 
-    val fitnessFunction: (Genotype<IntegerGene>) -> Double = { genotype ->
-        val order = genotype.chromosome().asSequence().map { it.allele() }.toList()
+    // Define the fitness function
+    val fitnessFunction: (Genotype<*>) -> Double = { genotype ->
+        val chromosome = genotype.chromosome() as PermutationChromosome<Int>
+        val order = chromosome.stream().map { it.allele() }.toList()
         val orderedCities = order.map { cities[it] }
         totalDistance(orderedCities)
     }
 
-    val genotypeFactory = Genotype.of(IntegerChromosome.of(0, cities.size - 1, cities.size))
+    // Create a genotype factory for permutations
+    val genotypeFactory = Genotype.of(PermutationChromosome.ofInteger(cities.size))
 
+    // Build the evolutionary engine
     val engine = Engine.builder(fitnessFunction, genotypeFactory)
         .minimizing()
         .populationSize(500)
-        .alterers(SwapMutator<IntegerGene, Double>(0.2))
+        .alterers(SwapMutator(0.05))
         .build()
 
     val generations = mutableListOf<Int>()
     val bestFitnesses = mutableListOf<Double>()
-    val worstFitnesses = mutableListOf<Double>()
     val averageFitnesses = mutableListOf<Double>()
+    val worstFitnesses = mutableListOf<Double>()
 
+
+    // Run the evolution and get the best genotype
     val bestGenotype = engine.stream()
         .peek { generation ->
             val generationNumber = generation.generation()
             val fitnessValues = generation.population().map { it.fitness() }
 
-            val bestFitness = fitnessValues.minOrNull() ?: Double.MAX_VALUE
-            val worstFitness = fitnessValues.maxOrNull() ?: Double.MIN_VALUE
-            val averageFitness = fitnessValues.average()
+            val bestFitness = fitnessValues.minOrNull()?.toRoundedBigDecimal(3)  ?: Double.MAX_VALUE
+            val averageFitness = fitnessValues.average().toRoundedBigDecimal(3)
+            val worstFitness = fitnessValues.maxOrNull()?.toRoundedBigDecimal(3) ?: Double.MIN_VALUE
+
 
             // Dodanie danych do list
             generations.add(generationNumber.toInt())
-            bestFitnesses.add(bestFitness.toRoundedBigDecimal(3))
-            worstFitnesses.add(worstFitness.toRoundedBigDecimal(3))
-            averageFitnesses.add(averageFitness.toRoundedBigDecimal(3))
+            bestFitnesses.add(bestFitness)
+            worstFitnesses.add(worstFitness)
+            averageFitnesses.add(averageFitness)
 
-            println("Generation: $generationNumber, Best: $bestFitness, Worst: $worstFitness, Average: $averageFitness")
+            println("Generation: $generationNumber, Best: $bestFitness, Average: $averageFitness, Worst: $worstFitness")
         }
         .limit(200)
         .collect(EvolutionResult.toBestGenotype())
 
-    // Wyświetlenie wykresu
     showChart(generations, bestFitnesses, worstFitnesses, averageFitnesses)
+
+    // Extract and print the best route
+    val bestOrder = (bestGenotype.chromosome() as PermutationChromosome<Int>)
+        .stream().map { it.allele() }.toList()
+    val bestRoute = bestOrder.map { cities[it] }
+    println("Best Route: $bestRoute")
+    println("Distance: ${totalDistance(bestRoute)}")
 }
 
 fun showChart(
